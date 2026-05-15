@@ -29,6 +29,7 @@ export default function DashboardPage() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { window.location.href = '/login'; return }
+if (user.email === '71999642635@reino.app') { window.location.href = '/dashboard/master'; return }
     const { data: usuario } = await supabase.from('usuarios').select('*, lojas(*)').eq('id', user.id).single()
     if (usuario?.lojas) setLoja(usuario.lojas)
     const lojaId = usuario?.loja_id
