@@ -3,30 +3,16 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '../../../lib/supabase'
 
-const MASTER_EMAIL = '71999642635@reino.app'
-
 export default function MasterPage() {
   const [lojas, setLojas] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [autorizado, setAutorizado] = useState(false)
   const [showNova, setShowNova] = useState(false)
   const [editando, setEditando] = useState<any>(null)
   const [novaLoja, setNovaLoja] = useState({ nome: '', telefone: '', cidade: '', estado: '' })
   const [criando, setCriando] = useState(false)
   const [sucesso, setSucesso] = useState('')
 
-  useEffect(() => { verificarAcesso() }, [])
-
-  async function verificarAcesso() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user || user.email !== MASTER_EMAIL) {
-      window.location.href = '/login'
-      return
-    }
-    setAutorizado(true)
-    carregarLojas()
-  }
+  useEffect(() => { carregarLojas() }, [])
 
   async function carregarLojas() {
     const supabase = createClient()
@@ -71,8 +57,6 @@ export default function MasterPage() {
     alert('Link copiado! Cole no WhatsApp.')
   }
 
-  if (!autorizado) return <div style={{ minHeight: '100vh', background: '#0a1625', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8ea3be' }}>Verificando acesso...</div>
-
   return (
     <div style={{ minHeight: '100vh', background: '#0a1625', padding: '20px' }}>
       <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
@@ -84,14 +68,9 @@ export default function MasterPage() {
               <div style={{ color: '#c9982a', fontSize: '11px' }}>Painel Master</div>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button onClick={() => window.location.href = '/dashboard'} style={{ background: 'transparent', color: '#8ea3be', border: '1px solid rgba(201,152,42,0.2)', borderRadius: '8px', padding: '8px 14px', fontSize: '12px', cursor: 'pointer' }}>
-              Painel Lojista
-            </button>
-            <button onClick={() => setShowNova(true)} style={{ background: '#c9982a', color: '#0d1b2e', border: 'none', borderRadius: '8px', padding: '10px 18px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
-              + Nova Loja
-            </button>
-          </div>
+          <button onClick={() => setShowNova(true)} style={{ background: '#c9982a', color: '#0d1b2e', border: 'none', borderRadius: '8px', padding: '10px 18px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+            + Nova Loja
+          </button>
         </div>
 
         {sucesso && <div style={{ background: '#22c55e20', border: '1px solid #22c55e', borderRadius: '8px', padding: '12px', color: '#22c55e', marginBottom: '16px', fontSize: '13px' }}>✅ {sucesso}</div>}
