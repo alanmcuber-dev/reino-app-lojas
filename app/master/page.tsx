@@ -25,13 +25,15 @@ export default function MasterPage() {
     if (!novaLoja.nome) return
     setCriando(true)
     const supabase = createClient()
-    const { data, error } = await supabase.from('lojas').insert([{ nome: novaLoja.nome, telefone: novaLoja.telefone, cidade: novaLoja.cidade, estado: novaLoja.estado, ativo: true }]).select().single()
+    const { data, error } = await supabase.from('lojas').insert([{ nome: novaLoja.nome, telefone: novaLoja.telefone, cidade: novaLoja.cidade, estado: novaLoja.estado, status: 'ativa' }]).select().single()
     if (!error && data) {
       setSucesso(`Loja "${data.nome}" criada com sucesso!`)
       setNovaLoja({ nome: '', telefone: '', cidade: '', estado: '' })
       setShowNova(false)
       carregarLojas()
       setTimeout(() => setSucesso(''), 4000)
+    } else {
+      console.error(error)
     }
     setCriando(false)
   }
@@ -51,6 +53,12 @@ export default function MasterPage() {
     carregarLojas()
   }
 
+  async function sair() {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    window.location.href = '/login'
+  }
+
   function compartilhar(loja: any) {
     const texto = `🏪 *${loja.nome}*\n\n🔗 Link da loja: https://aqua-snake-101151.hostingersite.com/${loja.slug ?? loja.id}\n\n📊 Painel: https://aqua-snake-101151.hostingersite.com/dashboard\n\nEntre em contato para receber seu login!`
     navigator.clipboard.writeText(texto)
@@ -68,9 +76,14 @@ export default function MasterPage() {
               <div style={{ color: '#c9982a', fontSize: '11px' }}>Painel Master</div>
             </div>
           </div>
-          <button onClick={() => setShowNova(true)} style={{ background: '#c9982a', color: '#0d1b2e', border: 'none', borderRadius: '8px', padding: '10px 18px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
-            + Nova Loja
-          </button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button onClick={() => setShowNova(true)} style={{ background: '#c9982a', color: '#0d1b2e', border: 'none', borderRadius: '8px', padding: '10px 18px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+              + Nova Loja
+            </button>
+            <button onClick={sair} style={{ background: 'transparent', color: '#8ea3be', border: '1px solid rgba(201,152,42,0.2)', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', cursor: 'pointer' }}>
+              🚪 Sair
+            </button>
+          </div>
         </div>
 
         {sucesso && <div style={{ background: '#22c55e20', border: '1px solid #22c55e', borderRadius: '8px', padding: '12px', color: '#22c55e', marginBottom: '16px', fontSize: '13px' }}>✅ {sucesso}</div>}
@@ -154,8 +167,8 @@ export default function MasterPage() {
                     <td style={{ padding: '12px 16px', color: '#8ea3be', fontSize: '13px' }}>{loja.cidade ?? '-'} {loja.estado ?? ''}</td>
                     <td style={{ padding: '12px 16px', color: '#8ea3be', fontSize: '13px' }}>{loja.telefone ?? '-'}</td>
                     <td style={{ padding: '12px 16px' }}>
-                      <span style={{ background: loja.ativo ? '#22c55e20' : '#ef444420', color: loja.ativo ? '#22c55e' : '#ef4444', padding: '2px 8px', borderRadius: '20px', fontSize: '11px' }}>
-                        {loja.ativo ? 'Ativa' : 'Inativa'}
+                      <span style={{ background: loja.status === 'ativa' ? '#22c55e20' : '#ef444420', color: loja.status === 'ativa' ? '#22c55e' : '#ef4444', padding: '2px 8px', borderRadius: '20px', fontSize: '11px' }}>
+                        {loja.status ?? 'inativa'}
                       </span>
                     </td>
                     <td style={{ padding: '12px 16px', display: 'flex', gap: '6px' }}>
