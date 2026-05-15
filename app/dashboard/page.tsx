@@ -2,92 +2,51 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '../../lib/supabase'
+
+const MENU = [
+  { icon: '📊', label: 'Dashboard',     href: '/dashboard' },
+  { icon: '📦', label: 'Produtos',      href: '/dashboard/produtos' },
+  { icon: '🗂️', label: 'Estoque',       href: '/dashboard/estoque' },
+  { icon: '📋', label: 'Pedidos',       href: '/dashboard/pedidos' },
+  { icon: '👥', label: 'Clientes',      href: '/dashboard/clientes' },
+  { icon: '🖼️', label: 'Banners',       href: '/dashboard/banners' },
+  { icon: '📈', label: 'Relatórios',    href: '/dashboard/relatorios' },
+  { icon: '💰', label: 'Financeiro',    href: '/dashboard/financeiro' },
+  { icon: '🔌', label: 'Integrações',   href: '/dashboard/integracoes' },
+  { icon: '⚙️', label: 'Configurações', href: '/dashboard/configuracoes' },
+]
+
 export default function DashboardPage() {
-  const [stats, setStats] = useState({
-    vendas_hoje: 0,
-    pedidos: 0,
-    lucro: 0,
-    estoque_baixo: 0
-  })
+  const [stats, setStats] = useState({ vendas_hoje: 0, pedidos: 0, lucro: 0, estoque_baixo: 0 })
   const [pedidos, setPedidos] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [loja, setLoja] = useState<any>(null)
+  const paginaAtual = typeof window !== 'undefined' ? window.location.pathname : '/dashboard'
 
-  useEffect(() => {
-    carregarDados()
-  }, [])
+  useEffect(() => { carregarDados() }, [])
 
   async function carregarDados() {
     const supabase = createClient()
-
-    // Busca usuário logado
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { window.location.href = '/login'; return }
-
-    // Busca loja do usuário
-    const { data: usuario } = await supabase
-      .from('usuarios')
-      .select('*, lojas(*)')
-      .eq('id', user.id)
-      .single()
-
+    const { data: usuario } = await supabase.from('usuarios').select('*, lojas(*)').eq('id', user.id).single()
     if (usuario?.lojas) setLoja(usuario.lojas)
-
     const lojaId = usuario?.loja_id
     if (!lojaId) { setLoading(false); return }
-
-    // Busca pedidos recentes
-    const { data: pedidosData } = await supabase
-      .from('pedidos')
-      .select('*')
-      .eq('loja_id', lojaId)
-      .order('created_at', { ascending: false })
-      .limit(5)
-
+    const { data: pedidosData } = await supabase.from('pedidos').select('*').eq('loja_id', lojaId).order('created_at', { ascending: false }).limit(5)
     if (pedidosData) setPedidos(pedidosData)
-
-    // Stats
-    const { data: pedidosHoje } = await supabase
-      .from('pedidos')
-      .select('total')
-      .eq('loja_id', lojaId)
-      .eq('status', 'finalizado')
-      .gte('created_at', new Date().toISOString().split('T')[0])
-
-    const { data: estoqueBaixo } = await supabase
-      .from('produtos')
-      .select('id')
-      .eq('loja_id', lojaId)
-      .lt('estoque', 5)
-      .is('deletado_em', null)
-
+    const { data: pedidosHoje } = await supabase.from('pedidos').select('total').eq('loja_id', lojaId).eq('status', 'finalizado').gte('created_at', new Date().toISOString().split('T')[0])
+    const { data: estoqueBaixo } = await supabase.from('produtos').select('id').eq('loja_id', lojaId).lt('estoque', 5).is('deletado_em', null)
     const totalHoje = pedidosHoje?.reduce((a, p) => a + Number(p.total), 0) ?? 0
-
-    setStats({
-      vendas_hoje: totalHoje,
-      pedidos: pedidosData?.length ?? 0,
-      lucro: totalHoje * 0.35,
-      estoque_baixo: estoqueBaixo?.length ?? 0
-    })
-
+    setStats({ vendas_hoje: totalHoje, pedidos: pedidosData?.length ?? 0, lucro: totalHoje * 0.35, estoque_baixo: estoqueBaixo?.length ?? 0 })
     setLoading(false)
   }
 
-  const formatarMoeda = (v: number) =>
-    v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-
-  const STATUS_COR: Record<string, string> = {
-    pendente:   '#f59e0b',
-    pago:       '#22c55e',
-    preparando: '#3b82f6',
-    finalizado: '#8b5cf6',
-    cancelado:  '#ef4444',
-  }
+  const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+  const STATUS_COR: Record<string, string> = { pendente: '#f59e0b', pago: '#22c55e', preparando: '#3b82f6', finalizado: '#8b5cf6', cancelado: '#ef4444' }
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#0a1625' }}>
-
-      {/* Sidebar */}
       <div style={{ width: '220px', background: '#0d1b2e', borderRight: '1px solid rgba(201,152,42,0.1)', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '16px', borderBottom: '1px solid rgba(201,152,42,0.1)', display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{ width: '36px', height: '36px', background: '#c9982a', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>👑</div>
@@ -97,60 +56,44 @@ export default function DashboardPage() {
           </div>
         </div>
         <nav style={{ flex: 1, padding: '8px 0' }}>
-          {[
-            { icon: '📊', label: 'Dashboard', ativo: true },
-            { icon: '📦', label: 'Produtos' },
-            { icon: '🗂️', label: 'Estoque' },
-            { icon: '📋', label: 'Pedidos' },
-            { icon: '👥', label: 'Clientes' },
-            { icon: '🖼️', label: 'Banners' },
-            { icon: '📈', label: 'Relatórios' },
-            { icon: '💰', label: 'Financeiro' },
-            { icon: '🔌', label: 'Integrações' },
-            { icon: '⚙️', label: 'Configurações' },
-          ].map(item => (
-            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 16px', color: item.ativo ? '#c9982a' : '#8ea3be', background: item.ativo ? 'rgba(201,152,42,0.1)' : 'transparent', borderLeft: item.ativo ? '2px solid #c9982a' : '2px solid transparent', cursor: 'pointer', fontSize: '13px' }}>
-              <span>{item.icon}</span><span>{item.label}</span>
-            </div>
-          ))}
+          {MENU.map(item => {
+            const ativo = paginaAtual === item.href
+            return (
+              <div key={item.label} onClick={() => window.location.href = item.href}
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 16px', color: ativo ? '#c9982a' : '#8ea3be', background: ativo ? 'rgba(201,152,42,0.1)' : 'transparent', borderLeft: ativo ? '2px solid #c9982a' : '2px solid transparent', cursor: 'pointer', fontSize: '13px' }}>
+                <span>{item.icon}</span><span>{item.label}</span>
+              </div>
+            )
+          })}
         </nav>
         <div style={{ padding: '12px' }}>
-          <button
-            onClick={async () => { const s = createClient(); await s.auth.signOut(); window.location.href = '/login' }}
-            style={{ width: '100%', background: 'transparent', border: '1px solid rgba(201,152,42,0.2)', borderRadius: '8px', padding: '8px', color: '#8ea3be', fontSize: '12px', cursor: 'pointer' }}
-          >
+          <button onClick={async () => { const s = createClient(); await s.auth.signOut(); window.location.href = '/login' }}
+            style={{ width: '100%', background: 'transparent', border: '1px solid rgba(201,152,42,0.2)', borderRadius: '8px', padding: '8px', color: '#8ea3be', fontSize: '12px', cursor: 'pointer' }}>
             🚪 Sair
           </button>
         </div>
       </div>
-
-      {/* Conteúdo */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-
-        {/* Header */}
         <div style={{ height: '56px', background: '#0d1b2e', borderBottom: '1px solid rgba(201,152,42,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px' }}>
           <div>
-            <div style={{ color: '#fff', fontSize: '16px', fontWeight: 600 }}>{loja?.nome ?? 'Carregando...'}</div>
+            <div style={{ color: '#fff', fontSize: '16px', fontWeight: 600 }}>{loja?.nome ?? 'Reino Store Demo'}</div>
             <div style={{ color: '#c9982a', fontSize: '11px' }}>Painel da Loja</div>
           </div>
-          <button style={{ background: '#c9982a', color: '#0d1b2e', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+          <button onClick={() => window.location.href = '/dashboard/produtos'}
+            style={{ background: '#c9982a', color: '#0d1b2e', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
             + Novo Produto
           </button>
         </div>
-
-        {/* Página */}
         <div style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
-
           {loading ? (
             <div style={{ textAlign: 'center', color: '#8ea3be', padding: '40px' }}>Carregando dados...</div>
           ) : (
             <>
-              {/* Métricas */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
                 {[
-                  { icon: '🛒', label: 'Vendas hoje', valor: formatarMoeda(stats.vendas_hoje), cor: '#c9982a' },
+                  { icon: '🛒', label: 'Vendas hoje', valor: fmt(stats.vendas_hoje), cor: '#c9982a' },
                   { icon: '📋', label: 'Pedidos', valor: String(stats.pedidos), cor: '#3b82f6' },
-                  { icon: '📈', label: 'Lucro estimado', valor: formatarMoeda(stats.lucro), cor: '#22c55e' },
+                  { icon: '📈', label: 'Lucro estimado', valor: fmt(stats.lucro), cor: '#22c55e' },
                   { icon: '📦', label: 'Estoque baixo', valor: `${stats.estoque_baixo} itens`, cor: '#f59e0b' },
                 ].map(card => (
                   <div key={card.label} style={{ background: '#132236', border: '1px solid rgba(201,152,42,0.1)', borderRadius: '12px', padding: '14px', display: 'flex', gap: '12px' }}>
@@ -162,20 +105,14 @@ export default function DashboardPage() {
                   </div>
                 ))}
               </div>
-
-              {/* Pedidos */}
               <div style={{ background: '#132236', border: '1px solid rgba(201,152,42,0.1)', borderRadius: '12px', padding: '16px' }}>
-                <h3 style={{ color: '#fff', fontSize: '14px', fontWeight: 500, margin: '0 0 14px' }}>
-                  Pedidos recentes {pedidos.length === 0 && <span style={{ color: '#8ea3be', fontSize: '12px', fontWeight: 400 }}>— nenhum pedido ainda</span>}
-                </h3>
+                <h3 style={{ color: '#fff', fontSize: '14px', fontWeight: 500, margin: '0 0 14px' }}>Pedidos recentes</h3>
                 {pedidos.length > 0 ? (
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
-                      <tr>
-                        {['Pedido', 'Cliente', 'Status', 'Total'].map(h => (
-                          <th key={h} style={{ textAlign: 'left', padding: '6px 8px', color: '#8ea3be', fontSize: '11px', fontWeight: 400, borderBottom: '1px solid rgba(201,152,42,0.1)' }}>{h}</th>
-                        ))}
-                      </tr>
+                      <tr>{['Pedido', 'Cliente', 'Status', 'Total'].map(h => (
+                        <th key={h} style={{ textAlign: 'left', padding: '6px 8px', color: '#8ea3be', fontSize: '11px', fontWeight: 400, borderBottom: '1px solid rgba(201,152,42,0.1)' }}>{h}</th>
+                      ))}</tr>
                     </thead>
                     <tbody>
                       {pedidos.map(p => (
@@ -183,11 +120,9 @@ export default function DashboardPage() {
                           <td style={{ padding: '8px', color: '#c9982a', fontSize: '12px', fontWeight: 500 }}>#{p.numero}</td>
                           <td style={{ padding: '8px', color: '#b8cde2', fontSize: '12px' }}>{p.cliente_nome}</td>
                           <td style={{ padding: '8px' }}>
-                            <span style={{ background: `${STATUS_COR[p.status] ?? '#8ea3be'}20`, color: STATUS_COR[p.status] ?? '#8ea3be', padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 500 }}>
-                              {p.status}
-                            </span>
+                            <span style={{ background: `${STATUS_COR[p.status] ?? '#8ea3be'}20`, color: STATUS_COR[p.status] ?? '#8ea3be', padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 500 }}>{p.status}</span>
                           </td>
-                          <td style={{ padding: '8px', color: '#fff', fontSize: '12px', fontWeight: 500 }}>{formatarMoeda(Number(p.total))}</td>
+                          <td style={{ padding: '8px', color: '#fff', fontSize: '12px', fontWeight: 500 }}>{fmt(Number(p.total))}</td>
                         </tr>
                       ))}
                     </tbody>
