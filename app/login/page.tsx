@@ -36,9 +36,9 @@ export default function LoginPage() {
         setLoading(false)
         return
       }
-      router.push('/dashboard/master')
+      window.location.href = '/dashboard/master'
     } else {
-      router.push('/dashboard')
+      window.location.href = '/dashboard'
     }
   }
 
