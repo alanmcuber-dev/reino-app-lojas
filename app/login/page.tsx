@@ -84,7 +84,7 @@ export default function LoginPage() {
 
           <p style={{ textAlign: 'center', color: '#8ea3be', fontSize: '12px' }}>
             Esqueceu a senha?{' '}
-            <a href="https://wa.me/5571999642635" target="_blank" style={{ color: '#c9982a', cursor: 'pointer', textDecoration: 'none' }}>Falar no WhatsApp</a>
+            <a href="https://wa.me/5571993441554" target="_blank" style={{ color: '#c9982a', cursor: 'pointer', textDecoration: 'none' }}>Falar no WhatsApp</a>
           </p>
         </div>
       </div>
