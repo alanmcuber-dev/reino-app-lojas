@@ -21,19 +21,32 @@ export default function MasterPage() {
     setLoading(false)
   }
 
+  function gerarSlug(nome: string) {
+    return nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+  }
+
   async function criarLoja() {
     if (!novaLoja.nome) return
     setCriando(true)
     const supabase = createClient()
-    const { data, error } = await supabase.from('lojas').insert([{ nome: novaLoja.nome, telefone: novaLoja.telefone, cidade: novaLoja.cidade, estado: novaLoja.estado, status: 'ativa' }]).select().single()
+    const slug = gerarSlug(novaLoja.nome) + '-' + Date.now()
+    const { data, error } = await supabase.from('lojas').insert([{
+      nome: novaLoja.nome,
+      telefone: novaLoja.telefone,
+      whatsapp: novaLoja.telefone,
+      cidade: novaLoja.cidade,
+      estado: novaLoja.estado,
+      status: 'ativa',
+      slug
+    }]).select().single()
     if (!error && data) {
-      setSucesso(`Loja "${data.nome}" criada com sucesso!`)
+      setSucesso(`Loja "${data.nome}" criada! Link: /${data.slug}`)
       setNovaLoja({ nome: '', telefone: '', cidade: '', estado: '' })
       setShowNova(false)
       carregarLojas()
-      setTimeout(() => setSucesso(''), 4000)
+      setTimeout(() => setSucesso(''), 6000)
     } else {
-      console.error(error)
+      alert('Erro ao criar loja: ' + error?.message)
     }
     setCriando(false)
   }
@@ -41,7 +54,7 @@ export default function MasterPage() {
   async function salvarEdicao() {
     if (!editando) return
     const supabase = createClient()
-    await supabase.from('lojas').update({ nome: editando.nome, telefone: editando.telefone, cidade: editando.cidade, estado: editando.estado }).eq('id', editando.id)
+    await supabase.from('lojas').update({ nome: editando.nome, telefone: editando.telefone, whatsapp: editando.telefone, cidade: editando.cidade, estado: editando.estado }).eq('id', editando.id)
     setEditando(null)
     carregarLojas()
   }
@@ -60,7 +73,8 @@ export default function MasterPage() {
   }
 
   function compartilhar(loja: any) {
-    const texto = `🏪 *${loja.nome}*\n\n🔗 Link da loja: https://aqua-snake-101151.hostingersite.com/${loja.slug ?? loja.id}\n\n📊 Painel: https://aqua-snake-101151.hostingersite.com/dashboard\n\nEntre em contato para receber seu login!`
+    const link = `https://aqua-snake-101151.hostingersite.com/${loja.slug}`
+    const texto = `🏪 *${loja.nome}*\n\n🔗 Link da loja: ${link}\n\n📊 Painel: https://aqua-snake-101151.hostingersite.com/dashboard\n\nEntre em contato para receber seu login!`
     navigator.clipboard.writeText(texto)
     alert('Link copiado! Cole no WhatsApp.')
   }
@@ -94,7 +108,7 @@ export default function MasterPage() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
               {[
                 { label: 'Nome da loja *', key: 'nome', placeholder: 'Ex: Pizzaria da Bia' },
-                { label: 'Telefone', key: 'telefone', placeholder: '71999999999' },
+                { label: 'Telefone / WhatsApp', key: 'telefone', placeholder: '71999999999' },
                 { label: 'Cidade', key: 'cidade', placeholder: 'Salvador' },
                 { label: 'Estado', key: 'estado', placeholder: 'BA' },
               ].map(f => (
