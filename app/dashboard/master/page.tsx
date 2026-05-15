@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '../../../lib/supabase'
 
-const MASTER_EMAIL = 'alanmcuber@gmail.com'
+const MASTER_EMAIL = '71999642635@reino.app'
 
 export default function MasterPage() {
   const [lojas, setLojas] = useState<any[]>([])
