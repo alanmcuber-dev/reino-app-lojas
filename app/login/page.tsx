@@ -1,12 +1,12 @@
 'use client'
 
+
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '../../lib/supabase'
 
 const MASTER_EMAIL = 'reinoapp1@gmail.com'
 const MASTER_SENHA = '91433835@Mc'
-
 export default function LoginPage() {
   const router = useRouter()
   const [telefone, setTelefone] = useState('')
@@ -18,19 +18,28 @@ export default function LoginPage() {
     setLoading(true)
     setErro('')
     const supabase = createClient()
+    const nums = telefone.replace(/\D/g, '')
+    const email = `${nums}@reino.app`
 
-    const email = tipo === 'master' ? MASTER_EMAIL : `${telefone.replace(/\D/g, '')}@reino.app`
-    const password = tipo === 'master' ? MASTER_SENHA : senha
-
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await supabase.auth.signInWithPassword({ email, password: senha })
 
     if (error) {
-      setErro(tipo === 'master' ? 'Acesso master inválido' : 'Telefone ou senha inválidos')
+      setErro('Telefone ou senha inválidos')
       setLoading(false)
       return
     }
 
-    window.location.href = tipo === 'master' ? '/dashboard/master' : '/dashboard'
+    if (tipo === 'master') {
+      if (email !== MASTER_EMAIL) {
+        setErro('Acesso master não autorizado')
+        await supabase.auth.signOut()
+        setLoading(false)
+        return
+      }
+      window.location.href = '/master'
+    } else {
+      window.location.href = '/dashboard'
+    }
   }
 
   return (
